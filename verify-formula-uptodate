@@ -1,0 +1,88 @@
+#!/bin/bash
+set -e
+
+SELFDIR=$(dirname "$0")
+SELFDIR=$(cd "$SELFDIR" && pwd)
+# shellcheck source=lib/functions.sh
+source "$SELFDIR/lib/functions.sh"
+
+CORE_GIT_REPO_CACHE=
+CORE_GIT_REMOTE=origin
+
+function usage()
+{
+	echo "Usage: ./verify-formula-uptodate OPTIONS..."
+	echo
+	echo "Optional options:"
+	echo "  -c PATH    Path to local Homebrew-core git repo cache"
+	echo "  -r NAME    Remote name in git repo cache. Default: origin"
+	echo "  -h         Show usage"
+}
+
+function parse_options()
+{
+	local OPTIND=1
+	local opt
+	while getopts "c:r:h" opt; do
+		case "$opt" in
+		c)
+			CORE_GIT_REPO_CACHE="$OPTARG"
+			;;
+		r)
+			CORE_GIT_REMOTE="$OPTARG"
+			;;
+		h)
+			usage
+			exit
+			;;
+		*)
+			return 1
+			;;
+		esac
+	done
+
+	(( OPTIND -= 1 )) || true
+	shift $OPTIND || true
+}
+
+parse_options "$@"
+
+if [[ "$CORE_GIT_REPO_CACHE" = "" ]]; then
+	TEMP_DIR=$(mktemp -d /tmp/verify-formula-uptodate.XXXXXX)
+
+	function _cleanup()
+	{
+		run rm -rf "$TEMP_DIR"
+	}
+
+	echo "+ Created temp dir $TEMP_DIR"
+	run git clone --bare --depth=1 https://github.com/Homebrew/homebrew-core.git "$TEMP_DIR/repo"
+	echo "+ Changing directory to: $TEMP_DIR/repo"
+	cd "$TEMP_DIR/repo"
+	echo "+ git log -n 1 --format=%ad master -- Formula/passenger.rb"
+	CORE_DATE=$(git log -n 1 --format=%ad master -- Formula/passenger.rb)
+else
+	echo "+ Changing directory to: $CORE_GIT_REPO_CACHE"
+	cd "$CORE_GIT_REPO_CACHE"
+	run git fetch "$CORE_GIT_REMOTE"
+	echo "+ git log -n 1 --format=%ad $CORE_GIT_REMOTE/master -- Formula/passenger.rb"
+	CORE_DATE=$(git log -n 1 --format="%ad" "$CORE_GIT_REMOTE/master" -- Formula/passenger.rb)
+fi
+CORE_TIMESTAMP=$(ruby -rtime -e 'puts Time.parse(ARGV[0]).to_i' "$CORE_DATE")
+echo "Homebrew-core's timestamp: $CORE_DATE => $CORE_TIMESTAMP"
+
+echo
+echo "+ Changing directory: $SELFDIR"
+cd "$SELFDIR"
+echo "+ Running: git log -n 1 --format=%ad -- Formula/passenger.rb"
+OUR_DATE=$(git log -n 1 --format=%ad -- Formula/passenger.rb)
+OUR_TIMESTAMP=$(ruby -rtime -e 'puts Time.parse(ARGV[0]).to_i' "$OUR_DATE")
+echo "Our timestamp: $OUR_DATE => $OUR_TIMESTAMP"
+
+echo
+if [[ "$OUR_TIMESTAMP" -ge "$CORE_TIMESTAMP" ]] && [[ "$OUR_CONTENT" = "$CORE_CONTENT" ]]; then
+	echo "Our formula is sufficiently up-to-date compared to the one in the Homebrew official core tap."
+else
+	echo "ERROR: our formula is outdated. There is a newer one in the Homebrew official core tap. Please merge over the changes."
+	exit 1
+fi

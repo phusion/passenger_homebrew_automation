@@ -1,0 +1,128 @@
+#!/bin/bash
+set -e
+
+SELFDIR=$(dirname "$0")
+SELFDIR=$(cd "$SELFDIR" && pwd)
+# shellcheck source=lib/functions.sh
+source "$SELFDIR/lib/functions.sh"
+
+PASSENGER_DIR=
+FORMULA=
+TARBALL=
+RESET_HOMEBREW=true
+NO_UNINSTALL=false
+
+function usage()
+{
+	echo "Usage: ./test-formula OPTIONS..."
+	echo
+	echo "Required options:"
+	echo "  -p PATH    Passenger source directory"
+	echo "  -f PATH    Formula to test"
+	echo "  -t PATH    Passenger tarball"
+	echo
+	echo "Optional options:"
+	echo "  -r         Do not reset Homebrew repos"
+	echo "  -n         Do not uninstall existing formulas"
+	echo "  -h         Show usage"
+}
+
+function parse_options()
+{
+	local OPTIND=1
+	local opt
+	while getopts "p:f:t:rnh" opt; do
+		case "$opt" in
+		p)
+			PASSENGER_DIR="$OPTARG"
+			;;
+		f)
+			FORMULA="$OPTARG"
+			;;
+		t)
+			TARBALL=$(ruby -e 'puts File.absolute_path(ARGV[0])' "$OPTARG")
+			;;
+		r)
+			RESET_HOMEBREW=false
+			;;
+		n)
+			NO_UNINSTALL=true
+			;;
+		h)
+			usage
+			exit
+			;;
+		*)
+			return 1
+			;;
+		esac
+	done
+
+	(( OPTIND -= 1 )) || true
+	shift $OPTIND || true
+
+	if [[ "$PASSENGER_DIR" = "" || "$FORMULA" = "" || "$TARBALL" = "" ]]; then
+		usage
+		exit 1
+	fi
+}
+
+parse_options "$@"
+
+# These environment variables interfere with 'brew install'
+# and maybe other stuff, so unset them.
+unset CC
+unset CXX
+unset USE_CCACHE
+
+# Grab a lockfile to prevent concurrent instances of this test
+# (e.g. concurrently testing Passenger and Passenger Enterprise
+# Homebrew formula). This process will be automatically killed
+# upon existing the current shell script.
+echo "+ Grabbing lock file: /tmp/test-homebrew-formula.lock"
+ruby -e 'File.open("/tmp/test-formula.lock", "w").flock(File::LOCK_EX)' &
+
+if $RESET_HOMEBREW; then
+	run brew update-reset
+fi
+
+if ! $NO_UNINSTALL; then
+	for NAME in nginx nginx-passenger-enterprise passenger passenger-enterprise; do
+		echo "+ Checking whether $NAME is installed"
+
+		set +e
+		OUTPUT=$(brew info --installed "$NAME" 2>&1)
+		RETVAL=$?
+		set -e
+
+		if [[ "$RETVAL" != 0 ]] && ! [[ "$OUTPUT" =~ 'No available formula' ]]; then
+			echo "+ Error in 'brew info --installed $NAME':" >&2
+			echo "$OUTPUT" >&2
+			exit 1
+		fi
+
+		if ! grep -qE '(^Not installed|No available formula)' <<<"$OUTPUT"; then
+			run brew uninstall "$NAME"
+		fi
+	done
+fi
+
+# We MUST copy our modified Formula to the offical path (i.e. the file that
+# `brew edit` would open).
+#
+# I've already tried `brew install`-ing the modified formula from a different
+# path, but then I would run into the following problem:
+# If the formula version is different from the one in homebrew-core,
+# then `brew install nginx --with-passenger` will try to install the passenger
+# formula from homebrew-core. The only way to prevent this is to copy our
+# modified formula to the official path.
+OFFICIAL_FORMULA_PATH=$(brew formula passenger)
+run cp "$FORMULA" "$OFFICIAL_FORMULA_PATH"
+run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|" "$OFFICIAL_FORMULA_PATH"
+run grep '^  url' "$OFFICIAL_FORMULA_PATH"
+run rm -rf "$(brew --cache)"/*
+run brew install -s passenger
+run brew install nginx --with-passenger
+echo "+ Switching to $PASSENGER_DIR"
+cd "$PASSENGER_DIR"
+run bundle exec drake test:integration:native_packaging

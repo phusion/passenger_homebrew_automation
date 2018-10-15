@@ -1,0 +1,143 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+require 'optparse'
+require 'digest/sha2'
+
+REQUIRED_OPTIONS = [:passenger_dir, :tarball]
+
+# Files and directories that should be excluded from the Homebrew installation.
+HOMEBREW_EXCLUDE = [
+  'INSTALL.md'
+]
+
+def main
+  options = parse_options
+  load_passenger_lib(options)
+  version = PhusionPassenger::VERSION_STRING
+  sha256  = calculate_tarball_sha256(options)
+  formula = File.open('Formula/passenger.rb', 'r:utf-8') { |f| f.read }
+
+  formula.gsub!(/passenger-.+?\.tar\.gz/, "passenger-#{version}.tar.gz") ||
+    abort('Unable to substitute Homebrew formula tarball filename')
+  formula.gsub!(/^  sha256 .*/, "  sha256 \"#{sha256}\"") ||
+    abort('Unable to substitute Homebrew formula SHA-256')
+
+  orig_tarball_files = list_passenger_tarball_files(options)
+  necessary_dirs = orig_tarball_files.map { |filename| filename.split('/').first }.uniq
+  necessary_dirs -= HOMEBREW_EXCLUDE
+  necessary_dirs << 'buildout'
+  necessary_dirs_str = word_wrap(necessary_dirs.inspect, 80).split("\n").join("\n      ")
+  formula.sub!(/necessary_files = .*?\]/m, "necessary_files = Dir#{necessary_dirs_str}") ||
+    abort('Unable to substitute Homebrew formula file whitelist')
+
+  write_output(options, formula)
+end
+
+def help
+  puts build_option_parser({})
+end
+
+def build_option_parser(options)
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: ./modify-formula OPTIONS...'
+    opts.separator 'Modifies the Homebrew formula for the given Passenger installation and tarball.'
+
+    opts.separator ''
+    opts.separator 'Required options:'
+    opts.on('-p', '--passenger-dir PATH', String, 'Path to Passenger source directory') do |v|
+      options[:passenger_dir] = v
+    end
+    opts.on('-t', '--tarball PATH', String, 'Path to Passenger source tarball') do |v|
+      options[:tarball] = v
+    end
+
+    opts.separator ''
+    opts.separator 'Optional options:'
+    opts.on('-o', '--output PATH', String, 'File to output to. Default: standard output') do |v|
+      options[:output] = v
+    end
+  end
+end
+
+def parse_options
+  options = {}
+  parser = build_option_parser(options)
+  parser.parse!
+
+  REQUIRED_OPTIONS.each do |option|
+    if !options.key?(option)
+      STDERR.puts 'ERROR: One or more required options are missing!'
+      help
+      abort
+    end
+  end
+
+  options
+end
+
+def load_passenger_lib(options)
+  require "#{options[:passenger_dir]}/src/ruby_supportlib/phusion_passenger.rb"
+  PhusionPassenger.locate_directories
+  PhusionPassenger.require_passenger_lib 'constants'
+  PhusionPassenger.require_passenger_lib 'packaging'
+end
+
+def calculate_tarball_sha256(options)
+  File.open(options[:tarball], 'rb') do |f|
+    Digest::SHA256.hexdigest(f.read)
+  end
+end
+
+def list_passenger_tarball_files(options)
+  Dir.chdir(options[:passenger_dir]) do
+    PhusionPassenger::Packaging.files
+  end
+end
+
+def word_wrap(text, width)
+  output = []
+
+  text.lines do |line|
+    line.chomp! "\n"
+    if line.length > width
+      new_lines = split_line(line, width)
+      while new_lines.length > 1 && new_lines[1].length > width
+        output.push new_lines[0]
+        new_lines = split_line new_lines[1], width
+      end
+      output += new_lines
+    else
+      output.push line
+    end
+  end
+  output.map { |s| s.rstrip! }
+  output.join("\n") + "\n"
+end
+
+def split_line(line, width)
+  at = line.index(/\s/)
+  last_at = at
+
+  while at != nil && at < width
+    last_at = at
+    at = line.index(/\s/, last_at + 1)
+  end
+
+  if last_at == nil
+    [line]
+  else
+    [line[0,last_at], line[last_at+1, line.length]]
+  end
+end
+
+def write_output(options, formula)
+  if options[:output]
+    File.open(options[:output], 'w:utf-8') do |f|
+      f.write(formula)
+    end
+  else
+    STDOUT.write(formula)
+  end
+end
+
+main

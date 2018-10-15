@@ -1,0 +1,23 @@
+# http://EditorConfig.org
+
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+
+[*.sh]
+indent_style=tab
+trim_trailing_whitespace = true
+
+[modify-formula]
+indent_style=tab
+trim_trailing_whitespace = true
+
+[test-formula]
+indent_style=tab
+trim_trailing_whitespace = true
+
+[verify-formula-uptodate]
+indent_style=tab
+trim_trailing_whitespace = true
