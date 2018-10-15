@@ -69,6 +69,13 @@ function parse_options()
 
 parse_options "$@"
 
+FORMULA_BASENAME=$(basename "$FORMULA")
+FORMULA_NAME=$(sed 's/\.rb$//' <<<"$FORMULA_BASENAME")
+if [[ "$FORMULA_BASENAME" != passenger.rb && "$FORMULA_BASENAME" != passenger-enterprise.rb ]]; then
+	echo "ERROR: formula filename may only be 'passenger' or 'passenger-enterprise'" >&2
+	exit 1
+fi
+
 # These environment variables interfere with 'brew install'
 # and maybe other stuff, so unset them.
 unset CC
@@ -83,10 +90,15 @@ echo "+ Grabbing lock file: /tmp/test-homebrew-formula.lock"
 ruby -e 'File.open("/tmp/test-formula.lock", "w").flock(File::LOCK_EX)' &
 
 if $RESET_HOMEBREW; then
-	run brew update-reset
+	echo
+	header "Resetting Homebrew repositories"
+	run brew update-reset "$(brew --repository)"
+	run brew update-reset "$(brew --repository phusion/passenger-enterprise)"
 fi
 
 if ! $NO_UNINSTALL; then
+	echo
+	header "Uninstalling existing formulas"
 	for NAME in nginx nginx-passenger-enterprise passenger passenger-enterprise; do
 		echo "+ Checking whether $NAME is installed"
 
@@ -107,6 +119,9 @@ if ! $NO_UNINSTALL; then
 	done
 fi
 
+echo
+header "Test installing Passenger and Nginx"
+
 # We MUST copy our modified Formula to the offical path (i.e. the file that
 # `brew edit` would open).
 #
@@ -116,13 +131,20 @@ fi
 # then `brew install nginx --with-passenger` will try to install the passenger
 # formula from homebrew-core. The only way to prevent this is to copy our
 # modified formula to the official path.
-OFFICIAL_FORMULA_PATH=$(brew formula passenger)
+OFFICIAL_FORMULA_PATH=$(brew formula "$FORMULA_NAME")
 run cp "$FORMULA" "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|" "$OFFICIAL_FORMULA_PATH"
 run grep '^  url' "$OFFICIAL_FORMULA_PATH"
 run rm -rf "$(brew --cache)"/*
-run brew install -s passenger
-run brew install nginx --with-passenger
+run brew install -s "$FORMULA_NAME"
+if [[ "$FORMULA_NAME" = passenger ]]; then
+	run brew install nginx --with-passenger
+else
+	run brew install nginx-passenger-enterprise
+fi
+
+echo
+header "Test Passenger installation"
 echo "+ Switching to $PASSENGER_DIR"
 cd "$PASSENGER_DIR"
 run bundle exec drake test:integration:native_packaging

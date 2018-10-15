@@ -11,7 +11,8 @@ CORE_GIT_REMOTE=origin
 
 function usage()
 {
-	echo "Usage: ./verify-formula-uptodate OPTIONS..."
+	echo "Usage: ./verify-oss-formula-uptodate OPTIONS..."
+	echo "Verify whether the open source formula is still up-to-date compared to the one in Homebrew-core."
 	echo
 	echo "Optional options:"
 	echo "  -c PATH    Path to local Homebrew-core git repo cache"
@@ -48,7 +49,7 @@ function parse_options()
 parse_options "$@"
 
 if [[ "$CORE_GIT_REPO_CACHE" = "" ]]; then
-	TEMP_DIR=$(mktemp -d /tmp/verify-formula-uptodate.XXXXXX)
+	TEMP_DIR=$(mktemp -d /tmp/verify-oss-formula-uptodate.XXXXXX)
 
 	function _cleanup()
 	{

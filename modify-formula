@@ -40,7 +40,8 @@ end
 def build_option_parser(options)
   OptionParser.new do |opts|
     opts.banner = 'Usage: ./modify-formula OPTIONS...'
-    opts.separator 'Modifies the Homebrew formula for the given Passenger installation and tarball.'
+    opts.separator 'Modifies the Homebrew formula for the given Passenger' \
+    	' installation and tarball: tarball filename, SHA256 and more.'
 
     opts.separator ''
     opts.separator 'Required options:'
