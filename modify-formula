@@ -3,6 +3,7 @@
 require 'optparse'
 require 'digest/sha2'
 
+SELFDIR = File.expand_path(File.dirname(__FILE__))
 REQUIRED_OPTIONS = [:passenger_dir, :tarball]
 
 # Files and directories that should be excluded from the Homebrew installation.
@@ -15,7 +16,7 @@ def main
   load_passenger_lib(options)
   version = PhusionPassenger::VERSION_STRING
   sha256  = calculate_tarball_sha256(options)
-  formula = File.open('Formula/passenger.rb', 'r:utf-8') { |f| f.read }
+  formula = File.open("#{SELFDIR}/Formula/passenger.rb", 'r:utf-8') { |f| f.read }
 
   formula.gsub!(/passenger-.+?\.tar\.gz/, "passenger-#{version}.tar.gz") ||
     abort('Unable to substitute Homebrew formula tarball filename')
