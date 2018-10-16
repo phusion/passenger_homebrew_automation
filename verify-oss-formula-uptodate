@@ -56,16 +56,27 @@ if [[ "$CORE_GIT_REPO_CACHE" = "" ]]; then
 		run rm -rf "$TEMP_DIR"
 	}
 
+	echo "*** HINT: cloning homebrew-core takes a while. To speed up this operation next time, use specify a cache using -c and -r."
 	echo "+ Created temp dir $TEMP_DIR"
-	run git clone --bare --depth=1 https://github.com/Homebrew/homebrew-core.git "$TEMP_DIR/repo"
+	run git clone --bare https://github.com/Homebrew/homebrew-core.git "$TEMP_DIR/repo"
 	echo "+ Changing directory to: $TEMP_DIR/repo"
 	cd "$TEMP_DIR/repo"
 	echo "+ git log -n 1 --format=%ad master -- Formula/passenger.rb"
 	CORE_DATE=$(git log -n 1 --format=%ad master -- Formula/passenger.rb)
 else
-	echo "+ Changing directory to: $CORE_GIT_REPO_CACHE"
-	cd "$CORE_GIT_REPO_CACHE"
-	run git fetch "$CORE_GIT_REMOTE"
+	if [[ -e "$CORE_GIT_REPO_CACHE" ]]; then
+		echo "+ Changing directory to: $CORE_GIT_REPO_CACHE"
+		cd "$CORE_GIT_REPO_CACHE"
+		run git fetch "$CORE_GIT_REMOTE"
+	else
+		run git clone --bare https://github.com/Homebrew/homebrew-core.git "$CORE_GIT_REPO_CACHE"
+		echo "+ Changing directory to: $CORE_GIT_REPO_CACHE"
+		cd "$CORE_GIT_REPO_CACHE"
+		if [[ "$CORE_GIT_REMOTE" != origin ]]; then
+			run git remote add "$CORE_GIT_REMOTE" https://github.com/Homebrew/homebrew-core.git
+			run git fetch "$CORE_GIT_REMOTE"
+		fi
+	fi
 	echo "+ git log -n 1 --format=%ad $CORE_GIT_REMOTE/master -- Formula/passenger.rb"
 	CORE_DATE=$(git log -n 1 --format="%ad" "$CORE_GIT_REMOTE/master" -- Formula/passenger.rb)
 fi
