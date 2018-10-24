@@ -136,11 +136,11 @@ run cp "$FORMULA" "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|" "$OFFICIAL_FORMULA_PATH"
 run grep '^  url' "$OFFICIAL_FORMULA_PATH"
 run rm -rf "$(brew --cache)"/*
-run brew install -s "$FORMULA_NAME"
+run brew install -sv "$FORMULA_NAME"
 if [[ "$FORMULA_NAME" = passenger ]]; then
-	run brew install nginx --with-passenger
+	run brew install -v nginx --with-passenger
 else
-	run brew install nginx-passenger-enterprise
+	run brew install -v nginx-passenger-enterprise
 fi
 
 echo
