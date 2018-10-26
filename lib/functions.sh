@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-RESET=$(echo -e "\033[0m")
-BOLD=$(echo -e "\033[1m")
-YELLOW=$(echo -e "\033[33m")
-BLUE_BG=$(echo -e "\033[44m")
+RESET=$(echo -e "\\033[0m")
+BOLD=$(echo -e "\\033[1m")
+YELLOW=$(echo -e "\\033[33m")
+BLUE_BG=$(echo -e "\\033[44m")
 
 function header()
 {
@@ -29,7 +29,8 @@ function run()
 function cleanup()
 {
 	set +e
-	local pids=$(jobs -p)
+	local pids
+	pids=$(jobs -p)
 	if [[ "$pids" != "" ]]; then
 		kill $pids 2>/dev/null
 	fi
