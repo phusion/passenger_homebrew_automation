@@ -11,7 +11,8 @@ indent_style=tab
 trim_trailing_whitespace = true
 
 [modify-formula]
-indent_style=tab
+indent_style=space
+indent_size=2
 trim_trailing_whitespace = true
 
 [test-formula]
