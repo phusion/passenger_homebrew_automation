@@ -9,8 +9,13 @@ source "$SELFDIR/lib/functions.sh"
 PASSENGER_DIR=
 FORMULA=
 TARBALL=
+NGINX_PASSENGER_ENTERPRISE_FORMULA=
 RESET_HOMEBREW=true
 NO_UNINSTALL=false
+NO_INSTALL_PASSENGER_FORMULA=false
+NO_INSTALL_NGINX_FORMULA=false
+HOMEBREW_INSTALL_COMMAND=install
+NATIVE_PACKAGING_TEST_ARGS=()
 
 function usage()
 {
@@ -20,10 +25,19 @@ function usage()
 	echo "  -p PATH    Passenger source directory"
 	echo "  -f PATH    Formula to test"
 	echo "  -t PATH    Passenger tarball"
+	echo "  -g PATH    Path to nginx-passenger-enterprise formula (only when testing Passenger Enterprise)"
 	echo
 	echo "Optional options:"
 	echo "  -r         Do not reset Homebrew repos"
 	echo "  -n         Do not uninstall existing formulas"
+	echo "  -P         Do not install Passenger formula"
+	echo "  -N         Do not install Nginx formula"
+	echo
+	echo "  -R         Reinstall instead of installing formulas"
+	echo "  -U         Upgrade instead of installing formulas"
+	echo
+	echo "  -E NAME    Run specific native packaging test under the given name"
+	echo
 	echo "  -h         Show usage"
 }
 
@@ -31,7 +45,7 @@ function parse_options()
 {
 	local OPTIND=1
 	local opt
-	while getopts "p:f:t:rnh" opt; do
+	while getopts "p:f:t:g:rnPNRUEh" opt; do
 		case "$opt" in
 		p)
 			PASSENGER_DIR="$OPTARG"
@@ -42,11 +56,29 @@ function parse_options()
 		t)
 			TARBALL=$(ruby -e 'puts File.absolute_path(ARGV[0])' "$OPTARG")
 			;;
+		g)
+			NGINX_PASSENGER_ENTERPRISE_FORMULA=$(ruby -e 'puts File.absolute_path(ARGV[0])' "$OPTARG")
+			;;
 		r)
 			RESET_HOMEBREW=false
 			;;
 		n)
 			NO_UNINSTALL=true
+			;;
+		P)
+			NO_INSTALL_PASSENGER_FORMULA=true
+			;;
+		N)
+			NO_INSTALL_NGINX_FORMULA=true
+			;;
+		R)
+			HOMEBREW_INSTALL_COMMAND=reinstall
+			;;
+		U)
+			HOMEBREW_INSTALL_COMMAND=upgrade
+			;;
+		E)
+			NATIVE_PACKAGING_TEST_ARGS=(-E "$OPTARG")
 			;;
 		h)
 			usage
@@ -75,6 +107,10 @@ if [[ "$FORMULA_BASENAME" != passenger.rb && "$FORMULA_BASENAME" != passenger-en
 	echo "ERROR: formula filename may only be 'passenger' or 'passenger-enterprise'" >&2
 	exit 1
 fi
+if [[ "$FORMULA_NAME" = passenger-enterprise && "$NGINX_PASSENGER_ENTERPRISE_FORMULA" = '' ]]; then
+	echo "ERROR: when testing against Passenger Enterprise, -g must be given" >&2
+	exit 1
+fi
 
 # These environment variables interfere with 'brew install'
 # and maybe other stuff, so unset them.
@@ -93,7 +129,13 @@ if $RESET_HOMEBREW; then
 	echo
 	header "Resetting Homebrew repositories"
 	run brew update-reset "$(brew --repository)"
-	run brew update-reset "$(brew --repository phusion/passenger-enterprise)"
+
+	PASSENGER_ENTERPRISE_TAP=$(brew --repository phusion/passenger-enterprise)
+	if [[ -e "$PASSENGER_ENTERPRISE_TAP" ]]; then
+		run brew update-reset "$PASSENGER_ENTERPRISE_TAP"
+	else
+		run brew tap phusion/passenger-enterprise
+	fi
 fi
 
 if ! $NO_UNINSTALL; then
@@ -135,16 +177,27 @@ OFFICIAL_FORMULA_PATH=$(brew formula "$FORMULA_NAME")
 run cp "$FORMULA" "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|" "$OFFICIAL_FORMULA_PATH"
 run grep '^  url' "$OFFICIAL_FORMULA_PATH"
+
+if [[ "$FORMULA_NAME" = passenger-enterprise ]]; then
+	OFFICIAL_FORMULA_PATH=$(brew formula nginx-passenger-enterprise)
+	run cp "$NGINX_PASSENGER_ENTERPRISE_FORMULA" "$OFFICIAL_FORMULA_PATH"
+fi
+
 run rm -rf "$(brew --cache)"/*
-run brew install -sv "$FORMULA_NAME"
-if [[ "$FORMULA_NAME" = passenger ]]; then
-	run brew install -v nginx --with-passenger
-else
-	run brew install -v nginx-passenger-enterprise
+
+if ! $NO_INSTALL_PASSENGER_FORMULA; then
+	run brew "$HOMEBREW_INSTALL_COMMAND" -sv "$FORMULA_NAME"
+fi
+if ! $NO_INSTALL_NGINX_FORMULA; then
+	if [[ "$FORMULA_NAME" = passenger ]]; then
+		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx --with-passenger
+	else
+		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx-passenger-enterprise
+	fi
 fi
 
 echo
 header "Test Passenger installation"
 echo "+ Switching to $PASSENGER_DIR"
 cd "$PASSENGER_DIR"
-run bundle exec drake test:integration:native_packaging
+run bundle exec drake test:integration:native_packaging "${NATIVE_PACKAGING_TEST_ARGS[@]}"
