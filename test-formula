@@ -187,12 +187,15 @@ run rm -rf "$(brew --cache)"/*
 
 if ! $NO_INSTALL_PASSENGER_FORMULA; then
 	run brew "$HOMEBREW_INSTALL_COMMAND" -sv "$FORMULA_NAME"
+	run brew audit --strict --verbose "$FORMULA_NAME"
 fi
 if ! $NO_INSTALL_NGINX_FORMULA; then
 	if [[ "$FORMULA_NAME" = passenger ]]; then
 		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx --with-passenger
+		run brew audit --strict --verbose nginx
 	else
 		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx-passenger-enterprise
+		run brew audit --strict --verbose nginx-passenger-enterprise
 	fi
 fi
 
