@@ -30,11 +30,13 @@ def main
     abort('Unable to substitute Homebrew formula SHA-256')
 
   orig_tarball_files = list_passenger_tarball_files(options)
+  prefix = '    necessary_files = %w['
   necessary_dirs = orig_tarball_files.map { |filename| filename.split('/').first }.uniq
   necessary_dirs -= HOMEBREW_EXCLUDE
   necessary_dirs << 'buildout'
-  necessary_dirs_str = word_wrap(necessary_dirs.inspect, 80).split("\n").join("\n      ")
-  formula.sub!(/necessary_files = .*?\]/m, "necessary_files = Dir#{necessary_dirs_str}") ||
+  necessary_dirs_str = word_wrap(necessary_dirs.join(' '), 80 - prefix.size)
+  necessary_dirs_str = necessary_dirs_str.split("\n").join("\n" + ' ' * prefix.size)
+  formula.sub!(/necessary_files = .*?\]/m, "necessary_files = %w[#{necessary_dirs_str}]") ||
     abort('Unable to substitute Homebrew formula file whitelist')
 
   write_output(options, formula)
