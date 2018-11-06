@@ -15,6 +15,7 @@ def main
   options = parse_options
   load_passenger_lib(options)
   version = PhusionPassenger::VERSION_STRING
+  branch_name = calculate_branch_name(version)
   sha256  = calculate_tarball_sha256(options)
   formula = File.open(options[:formula], 'r:utf-8') { |f| f.read }
 
@@ -22,8 +23,12 @@ def main
     formula.gsub!(/^  version \".*/, "  version \"#{version}\"") ||
       abort('Unable to substitute Homebrew formula version number')
   else
+    formula.gsub!(/release-.+?\//, "release-#{version}/") ||
+      abort('Unable to substitute Homebrew formula tarball URL')
     formula.gsub!(/passenger-.+?\.tar\.gz/, "passenger-#{version}.tar.gz") ||
       abort('Unable to substitute Homebrew formula tarball filename')
+    formula.gsub!(/:branch => .+/, ":branch => #{branch_name.inspect}") ||
+      abort('Unable to substitute Homebrew formula branch name')
   end
 
   formula.gsub!(/^  sha256 .*/, "  sha256 \"#{sha256}\"") ||
@@ -93,6 +98,10 @@ def load_passenger_lib(options)
   PhusionPassenger.locate_directories
   PhusionPassenger.require_passenger_lib 'constants'
   PhusionPassenger.require_passenger_lib 'packaging'
+end
+
+def calculate_branch_name(version)
+  'stable-' + version.split('.')[0..1].join('.')
 end
 
 def calculate_tarball_sha256(options)
