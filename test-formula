@@ -123,7 +123,7 @@ unset USE_CCACHE
 # Homebrew formula). This process will be automatically killed
 # upon existing the current shell script.
 echo "+ Grabbing lock file: /tmp/test-homebrew-formula.lock"
-ruby -e 'File.open("/tmp/test-formula.lock", "w").flock(File::LOCK_EX)' &
+ruby -e 'File.open("/tmp/test-formula.lock", "w").flock(File::LOCK_EX); sleep' &
 
 if $RESET_HOMEBREW; then
 	echo
