@@ -156,7 +156,7 @@ if ! $NO_UNINSTALL; then
 		fi
 
 		if ! grep -qE '(^Not installed|No available formula)' <<<"$OUTPUT"; then
-			run brew uninstall "$NAME"
+			run brew uninstall --force "$NAME"
 		fi
 	done
 fi
