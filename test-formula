@@ -145,12 +145,12 @@ if ! $NO_UNINSTALL; then
 		echo "+ Checking whether $NAME is installed"
 
 		set +e
-		OUTPUT=$(brew info --installed "$NAME" 2>&1)
+		OUTPUT=$(brew info --json --installed "$NAME" 2>&1)
 		RETVAL=$?
 		set -e
 
 		if [[ "$RETVAL" != 0 ]] && ! [[ "$OUTPUT" =~ 'No available formula' ]]; then
-			echo "+ Error in 'brew info --installed $NAME':" >&2
+			echo "+ Error in 'brew info --json --installed $NAME':" >&2
 			echo "$OUTPUT" >&2
 			exit 1
 		fi
