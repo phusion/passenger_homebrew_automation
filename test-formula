@@ -195,7 +195,7 @@ if ! $NO_INSTALL_PASSENGER_FORMULA; then
 fi
 if ! $NO_INSTALL_NGINX_FORMULA; then
 	if [[ "$FORMULA_NAME" = passenger ]]; then
-		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx --with-passenger
+		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx passenger
 		run brew audit --strict --verbose nginx
 	else
 		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx-passenger-enterprise
