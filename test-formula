@@ -199,6 +199,7 @@ if ! $NO_INSTALL_NGINX_FORMULA; then
 		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx passenger
 		run brew audit --strict --verbose nginx
 	else
+		run brew unlink nginx
 		run brew "$HOMEBREW_INSTALL_COMMAND" -v nginx-passenger-enterprise
 		run brew audit --strict --verbose nginx-passenger-enterprise
 	fi
