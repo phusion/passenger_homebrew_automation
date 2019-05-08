@@ -175,6 +175,7 @@ header "Test installing Passenger and Nginx"
 # modified formula to the official path.
 OFFICIAL_FORMULA_PATH=$(brew formula "$FORMULA_NAME")
 run cp "$FORMULA" "$OFFICIAL_FORMULA_PATH"
+run sed -i '' -e '/^ *revision.*$/d' "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|" "$OFFICIAL_FORMULA_PATH"
 run grep '^  url' "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e '/  patch do/{N;N;N;N;d;}' "$OFFICIAL_FORMULA_PATH"
