@@ -19,6 +19,8 @@ class Passenger < Formula
   depends_on "pcre"
 
   def install
+    ENV["SDKROOT"] = MacOS::CLT.sdk_path
+
     inreplace "src/ruby_supportlib/phusion_passenger/platform_info/openssl.rb" do |s|
       s.gsub! "-I/usr/local/opt/openssl/include", "-I#{Formula["openssl@1.1"].opt_include}"
       s.gsub! "-L/usr/local/opt/openssl/lib", "-L#{Formula["openssl@1.1"].opt_lib}"
