@@ -27,7 +27,7 @@ def main
       abort('Unable to substitute Homebrew formula tarball URL')
     formula.gsub!(/passenger-.+?\.tar\.gz/, "passenger-#{version}.tar.gz") ||
       abort('Unable to substitute Homebrew formula tarball filename')
-    formula.gsub!(/:branch => .+/, ":branch => #{branch_name.inspect}") ||
+    formula.gsub!(/branch: .+/, "branch: #{branch_name.inspect}") ||
       abort('Unable to substitute Homebrew formula branch name')
   end
 
