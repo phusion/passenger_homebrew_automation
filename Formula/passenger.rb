@@ -1,17 +1,17 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.0.5/passenger-6.0.5.tar.gz"
-  sha256 "94c25d5669c6cd1bc93854a020701c9869012eec621bce331bfe2d0c9c8c3532"
+  url "https://github.com/phusion/passenger/releases/download/release-6.0.6/passenger-6.0.6.tar.gz"
+  sha256 "fbf89ebfacc079bdf6466567eabc9eb741a5abd8f230133311f7a40fff763842"
   license "MIT"
   revision 1
-  head "https://github.com/phusion/passenger.git", :branch => "stable-6.0"
+  head "https://github.com/phusion/passenger.git", branch: "stable-6.0"
 
   bottle do
     cellar :any
-    sha256 "1d784fa0b9f722a3409378bcd34fe63f3759e5640cd696da72b026b457a90b02" => :catalina
-    sha256 "0da4deae2720ad05a1fc543dc687319806778897f913c724464a03d0f5d24591" => :mojave
-    sha256 "417250b329d2f44f6f8c3626d9f86f1d402f9b9643fca274d027270e5b561537" => :high_sierra
+    sha256 "2b8b8c8f7ef364c40d725fd057abc72de46caf47aae2e335fe4847be06a66abe" => :catalina
+    sha256 "f70a4f4516952932a995125f82f1fc53c4fa6f786329469c584963dbd1931969" => :mojave
+    sha256 "e23f613dee905e37d82202fb8da2d8fd8097b92f1d322b43dec6cdaf704829a7" => :high_sierra
   end
 
   # to build nginx module
@@ -57,7 +57,7 @@ class Passenger < Formula
                          passenger.gemspec build bin doc images dev src
                          resources buildout]
 
-    cp_r necessary_files, libexec, :preserve => true
+    cp_r necessary_files, libexec, preserve: true
 
     # Allow Homebrew to create symlinks for the Phusion Passenger commands.
     bin.install_symlink Dir["#{libexec}/bin/*"]
@@ -75,7 +75,7 @@ class Passenger < Formula
       "--ruby", ruby_libdir, *Dir[libexec/"bin/*"]
 
     system "./bin/passenger-config", "compile-nginx-engine"
-    cp Dir["buildout/support-binaries/nginx*"], libexec/"buildout/support-binaries", :preserve => true
+    cp Dir["buildout/support-binaries/nginx*"], libexec/"buildout/support-binaries", preserve: true
 
     nginx_addon_dir.gsub!(/^#{Regexp.escape Dir.pwd}/, libexec)
     system "./dev/install_scripts_bootstrap_code.rb",
