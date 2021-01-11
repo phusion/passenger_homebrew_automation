@@ -34,6 +34,10 @@ def main
   formula.gsub!(/^  sha256 .*/, "  sha256 \"#{sha256}\"") ||
     abort('Unable to substitute Homebrew formula SHA-256')
 
+  formula.sub!(/.*depends_on.*apache.*/,"")
+  formula.sub!(/.*uses_from_macos "ruby".*/,"")
+  formula.sub!(/.*revision.*/,"")
+
   orig_tarball_files = list_passenger_tarball_files(options)
   prefix = '    necessary_files = %w['
   necessary_dirs = orig_tarball_files.map { |filename| filename.split('/').first }.uniq
