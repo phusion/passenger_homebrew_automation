@@ -210,4 +210,4 @@ echo
 header "Test Passenger installation"
 echo "+ Switching to $PASSENGER_DIR"
 cd "$PASSENGER_DIR"
-run bundle exec drake test:integration:native_packaging "${NATIVE_PACKAGING_TEST_ARGS[@]}"
+run bundle exec rake test:integration:native_packaging "${NATIVE_PACKAGING_TEST_ARGS[@]}"
