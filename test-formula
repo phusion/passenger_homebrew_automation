@@ -192,7 +192,7 @@ if ! $NO_INSTALL_PASSENGER_FORMULA; then
 	if [[ "$FORMULA_NAME" = passenger ]]; then
 		# We don't audit the Passenger Enterprise formula because the way
 		# we build the URL there conflicts with brew audit rules.
-		run brew audit --strict --verbose "$FORMULA_NAME"
+		run brew audit --strict --verbose "$FORMULA_NAME" || ( cat "$FORMULA_NAME" && false )
 	fi
 fi
 if ! $NO_INSTALL_NGINX_FORMULA; then
