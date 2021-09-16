@@ -190,6 +190,8 @@ run rm -rf "$(brew --cache)"/*
 if ! $NO_INSTALL_PASSENGER_FORMULA; then
 	run brew "$HOMEBREW_INSTALL_COMMAND" -sv "$FORMULA_NAME"
 	if [[ "$FORMULA_NAME" = passenger ]]; then
+		# remove the word slave from the file:// url because it causes homebrew to fail the audit
+		run sed -i '' -Ee 's|^(.*url.*)-slave(.*)|\1\2|' "$OFFICIAL_FORMULA_PATH"
 		# We don't audit the Passenger Enterprise formula because the way
 		# we build the URL there conflicts with brew audit rules.
 		run brew audit --strict --verbose "$FORMULA_NAME" || ( cat "$OFFICIAL_FORMULA_PATH" && false )
