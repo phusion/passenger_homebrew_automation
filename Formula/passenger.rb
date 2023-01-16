@@ -1,21 +1,20 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.0.15/passenger-6.0.15.tar.gz"
-  sha256 "73fa22da5a11e4bc4ad6b95c13a0e393ba18109e6e07bd1953c45b2f0c0aae80"
+  url "https://github.com/phusion/passenger/releases/download/release-6.0.16/passenger-6.0.16.tar.gz"
+  sha256 "f2a4e9d718e62cc4aca5f03ed461cca14eb0c383d2bd96f47cebcc40b619873a"
   license "MIT"
   revision 1
   head "https://github.com/phusion/passenger.git", branch: "stable-6.0"
 
   bottle do
-    sha256 cellar: :any,                 arm64_ventura:  "c484bf21c4d99ca18b4fe53727e7e8dca5be790b5fc3c318136ff3299b7c892c"
-    sha256 cellar: :any,                 arm64_monterey: "fe6fdbc2c4be58efb67a193a871d1c7045322b355dc3b353a95c11096305682c"
-    sha256 cellar: :any,                 arm64_big_sur:  "5a58ee5238d5df54151f9f57d6612a45d2eec28256250cd2e564f37578b03bc2"
-    sha256 cellar: :any,                 ventura:        "e0cea8d3454ef1c4d29c7f0af6b9f7ca5cbbe22770faf478770637451dbf5ff7"
-    sha256 cellar: :any,                 monterey:       "570ae0abdcf3eb3100a011d349b840c934485e3bdff92f6b6d698b24dfc12bae"
-    sha256 cellar: :any,                 big_sur:        "dd7f6e422cdf93a1803c7eecaebe460e50ba433c5e34d47dca15001dbead5403"
-    sha256 cellar: :any,                 catalina:       "7b9f32e433018ed5b2db2bc9a8fc435fcf700c9b7e00248afb9450495b54d93a"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:   "7fd7b9e1a4b7d4fc8427a0763554c0afc565446531e1a6b3c91982a2874a43ad"
+    sha256 cellar: :any,                 arm64_ventura:  "edb5c8d94569c932c9cf7e164a1c11bb87e81c68997bb46c066d11e32fd7b650"
+    sha256 cellar: :any,                 arm64_monterey: "de3e03a9a40e4239092faf19293202192374871c73b2e28f6caffb6d0fe74bd3"
+    sha256 cellar: :any,                 arm64_big_sur:  "608b5e5215c6bf8330b85af91a7bfff315824719285d299a0463408318c93cd4"
+    sha256 cellar: :any,                 ventura:        "60ebadb635e30a048e81e4a20f3b3b2c5738b2f21f092fd8bfe03b4dcb4823ce"
+    sha256 cellar: :any,                 monterey:       "fe35f8a353b495b477377582fce7e2b84baebe5ceeb47b0a15d00acebcb7bda8"
+    sha256 cellar: :any,                 big_sur:        "90c1d3511b97e8e2061f5f5743991a04e807b4dae19dc1abdaffe0f64da150c5"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:   "01786b3c6b4280892e36f298285980d2e54a2771c73e577cbf5ca846a3f38e44"
   end
 
   depends_on "httpd" => :build # to build the apache2 module
@@ -29,6 +28,10 @@ class Passenger < Formula
   uses_from_macos "curl"
   uses_from_macos "libxcrypt"
   uses_from_macos "ruby", since: :catalina
+
+  # Fix compatibility with Ruby 3.2.
+  # Remove after next 6.0.17 release.
+  patch :DATA
 
   def install
     if MacOS.version >= :mojave && MacOS::CLT.installed?
@@ -152,3 +155,30 @@ class Passenger < Formula
     system "#{Formula["nginx"].opt_bin}/nginx", "-t", "-c", testpath/"nginx.conf"
   end
 end
+__END__
+diff --git a/src/ruby_native_extension/extconf.rb b/src/ruby_native_extension/extconf.rb
+index 95964c5f1..09c820d51 100644
+--- a/src/ruby_native_extension/extconf.rb
++++ b/src/ruby_native_extension/extconf.rb
+@@ -24,7 +24,7 @@
+ 
+ # Apple has a habit of getting their Ruby headers wrong, so if we are building using system ruby we need to patch things up, sierra & mojave both did this.
+ # eg https://openradar.appspot.com/46465917
+-if RUBY_PLATFORM =~ /darwin/ && !File.exists?(RbConfig::CONFIG["rubyarchhdrdir"])
++if RUBY_PLATFORM =~ /darwin/ && !File.exist?(RbConfig::CONFIG["rubyarchhdrdir"])
+   RbConfig::CONFIG["rubyarchhdrdir"].sub!(RUBY_PLATFORM.split('-').last, Dir.entries(File.dirname(RbConfig::CONFIG["rubyarchhdrdir"])).reject{|d|d.start_with?(".","ruby")}.first.split('-').last)
+ end
+ 
+diff --git a/src/ruby_supportlib/phusion_passenger/platform_info/operating_system.rb b/src/ruby_supportlib/phusion_passenger/platform_info/operating_system.rb
+index de17c072a..ecc24b710 100644
+--- a/src/ruby_supportlib/phusion_passenger/platform_info/operating_system.rb
++++ b/src/ruby_supportlib/phusion_passenger/platform_info/operating_system.rb
+@@ -247,7 +247,7 @@ def self.supports_lfence_instruction?
+     memoize :supports_lfence_instruction?, true
+ 
+     def self.requires_no_tls_direct_seg_refs?
+-      return File.exists?("/proc/xen/capabilities") && cpu_architectures[0] == "x86"
++      return File.exist?("/proc/xen/capabilities") && cpu_architectures[0] == "x86"
+     end
+     memoize :requires_no_tls_direct_seg_refs?, true
+ 
