@@ -179,6 +179,7 @@ run sed -i '' -e '/^ *revision.*$/d' "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|" "$OFFICIAL_FORMULA_PATH"
 run grep '^  url' "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e '/  patch do/{N;N;N;N;d;}' "$OFFICIAL_FORMULA_PATH"
+run sed -i '' -e '/patch :DATA/d' "$OFFICIAL_FORMULA_PATH"
 
 if [[ "$FORMULA_NAME" = passenger-enterprise ]]; then
 	OFFICIAL_FORMULA_PATH=$(brew formula nginx-passenger-enterprise)
