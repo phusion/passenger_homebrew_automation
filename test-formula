@@ -213,6 +213,8 @@ if ! $NO_INSTALL_NGINX_FORMULA; then
 	fi
 fi
 
+run brew uninstall --force --ignore-dependencies httpd
+
 echo
 header "Test Passenger installation"
 echo "+ Switching to $PASSENGER_DIR"
