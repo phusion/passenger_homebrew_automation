@@ -180,6 +180,9 @@ run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|"	 "$OFFICIAL_FORMULA_
 run sed -i '' -e '/  patch do/{N;N;N;N;d;}'			 "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e '/patch :DATA/d'				 "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e '/__END__/,$ d'				 "$OFFICIAL_FORMULA_PATH"
+run sed -i '' -Ee 's/(compile-nginx-engine"),/\1/'		 "$OFFICIAL_FORMULA_PATH"
+run sed -i '' -e '/.*--nginx-tarball.*/d'			 "$OFFICIAL_FORMULA_PATH"
+run sed -i '' -e '/.*--nginx-version.*/d'			 "$OFFICIAL_FORMULA_PATH"
 
 run grep '^  url' "$OFFICIAL_FORMULA_PATH"
 
