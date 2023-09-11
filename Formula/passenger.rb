@@ -1,27 +1,27 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.0.17/passenger-6.0.17.tar.gz"
-  sha256 "385559ed1d78eb83165222d568721dcc4222bb57c1939811ecd2c4ef33937ba7"
+  url "https://github.com/phusion/passenger/releases/download/release-6.0.18/passenger-6.0.18.tar.gz"
+  sha256 "dfcd9bcae364ce09b6ae59ea598f9dcad3e27a980b12c4b245acd336fa02c5a2"
   license "MIT"
-  revision 2
+  revision 3
   head "https://github.com/phusion/passenger.git", branch: "stable-6.0"
 
   bottle do
-    sha256 cellar: :any,                 arm64_ventura:  "dc0eb3d3754fb0c43a724d54de94ca3d1af0fe90dea838b9d1595a08e0d23cfa"
-    sha256 cellar: :any,                 arm64_monterey: "da72db721c2c040a4549c5cd1a64faa28542374b35b99986420a51dd060902cc"
-    sha256 cellar: :any,                 arm64_big_sur:  "2d790af382b9e8f83e8e00e3b4adfd4ecb9ca9c03f59c38310d54068905dfa83"
-    sha256 cellar: :any,                 ventura:        "a5aaa846330c89c6ef4d3cf35818f429c2e2beeea4aada067e3c4076fe73a806"
-    sha256 cellar: :any,                 monterey:       "18abce356f47f72d518ffa3611243458cb94e6f5d77189c92a867829cd72d3fe"
-    sha256 cellar: :any,                 big_sur:        "c5b1292bc1e1e6ce82b896273e7e39c13114847dfb8ab6b68f0e559358bbbb8c"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:   "274ea966b6d4a39383ed6db1da9de4a3f6905c7cc16ac80d7fa3322c3dcaee51"
+    sha256                               arm64_ventura:  "64261fcbe859cb04c75c09026224619ed28117c6aa6a8e67cd1c2a6df4db940e"
+    sha256                               arm64_monterey: "290fea979c89b6d82add7ec94304678689983fbbdc34e68fcbc03482d7879d9d"
+    sha256                               arm64_big_sur:  "6dd5c3a43a584ee6b9da56f29f020bb468b797472a3ea50e7b17f831ff91e20a"
+    sha256                               ventura:        "208c33acc007dec45e421f6f47ed49c3b18bd14254128a46d4ef2c7c30d29406"
+    sha256                               monterey:       "4bbae9f2d361dfc56715ba191b2c1e00d07ecbc6bb9647ba33800e688df7af9f"
+    sha256                               big_sur:        "e3a374c42b51be97f78331948a651f62ae98f384804990323769887f46af7c63"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:   "50bf68e47c7d1ad046aaf8a10a1ced178bc30b089de9b761f9b95c6956ccf03d"
   end
 
   depends_on "httpd" => :build # to build the apache2 module
   depends_on "nginx" => [:build, :test] # to build nginx module
   depends_on "apr"
   depends_on "apr-util"
-  depends_on "openssl@1.1"
+  depends_on "openssl@3"
   depends_on "pcre"
   depends_on "pcre2"
 
@@ -38,8 +38,8 @@ class Passenger < Formula
     end
 
     inreplace "src/ruby_supportlib/phusion_passenger/platform_info/openssl.rb" do |s|
-      s.gsub! "-I/usr/local/opt/openssl/include", "-I#{Formula["openssl@1.1"].opt_include}"
-      s.gsub! "-L/usr/local/opt/openssl/lib", "-L#{Formula["openssl@1.1"].opt_lib}"
+      s.gsub! "-I/usr/local/opt/openssl/include", "-I#{Formula["openssl@3"].opt_include}"
+      s.gsub! "-L/usr/local/opt/openssl/lib", "-L#{Formula["openssl@3"].opt_lib}"
     end
 
     system "rake", "apache2"
@@ -93,7 +93,7 @@ class Passenger < Formula
 
     system "./bin/passenger-config", "compile-nginx-engine",
       "--nginx-tarball", buildpath/"nginx.tar.gz",
-      "--nginx-version", Formula["nginx"].version
+      "--nginx-version", Formula["nginx"].version.to_s
     cp Dir["buildout/support-binaries/nginx*"], libexec/"buildout/support-binaries", preserve: true
 
     nginx_addon_dir.gsub!(/^#{Regexp.escape Dir.pwd}/, libexec)
