@@ -128,6 +128,7 @@ ruby -e 'File.open("/tmp/test-formula.lock", "w").flock(File::LOCK_EX); sleep' &
 if $RESET_HOMEBREW; then
 	echo
 	header "Resetting Homebrew repositories"
+	run brew tap --force homebrew/core
 	run brew update-reset "$(brew --repository homebrew/core)"
 
 	PASSENGER_ENTERPRISE_TAP=$(brew --repository phusion/passenger-enterprise)
