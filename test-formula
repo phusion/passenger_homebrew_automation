@@ -131,11 +131,13 @@ if $RESET_HOMEBREW; then
 	run brew tap --force homebrew/core
 	run brew update-reset "$(brew --repository homebrew/core)"
 
-	PASSENGER_ENTERPRISE_TAP=$(brew --repository phusion/passenger-enterprise)
-	if [[ -e "$PASSENGER_ENTERPRISE_TAP" ]]; then
-		run brew update-reset "$PASSENGER_ENTERPRISE_TAP"
-	else
-		run brew tap phusion/passenger-enterprise
+	if [[ "$FORMULA_NAME" = passenger-enterprise ]]; then
+		PASSENGER_ENTERPRISE_TAP=$(brew --repository phusion/passenger-enterprise)
+		if [[ -e "$PASSENGER_ENTERPRISE_TAP" ]]; then
+			run brew update-reset "$PASSENGER_ENTERPRISE_TAP"
+		else
+			run brew tap phusion/passenger-enterprise
+		fi
 	fi
 fi
 
