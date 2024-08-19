@@ -1,9 +1,10 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.0.21/passenger-6.0.21.tar.gz"
-  sha256 "c4a283256c0e24c684fa685729c564a203df49391890ce32c25895644f63d920"
+  url "https://github.com/phusion/passenger/releases/download/release-6.0.23/passenger-6.0.23.tar.gz"
+  sha256 "897555224fb11340677780d929b5099da62303b1ae15f2e7c65cd3f6d3e7920c"
   license "MIT"
+  revision 1
   head "https://github.com/phusion/passenger.git", branch: "stable-6.0"
 
   depends_on "httpd" => :build # to build the apache2 module
@@ -49,9 +50,9 @@ class Passenger < Formula
     (libexec/"download_cache").mkpath
 
     # Fixes https://github.com/phusion/passenger/issues/1288
-    rm_rf "buildout/libev"
-    rm_rf "buildout/libuv"
-    rm_rf "buildout/cache"
+    rm_r("buildout/libev")
+    rm_r("buildout/libuv")
+    rm_r("buildout/cache")
 
     necessary_files = %w[configure Rakefile README.md CONTRIBUTORS
                          CONTRIBUTING.md LICENSE CHANGELOG package.json
