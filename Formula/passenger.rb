@@ -4,7 +4,7 @@ class Passenger < Formula
   url "https://github.com/phusion/passenger/releases/download/release-6.0.23/passenger-6.0.23.tar.gz"
   sha256 "897555224fb11340677780d929b5099da62303b1ae15f2e7c65cd3f6d3e7920c"
   license "MIT"
-  revision 1
+  revision 3
   head "https://github.com/phusion/passenger.git", branch: "stable-6.0"
 
   depends_on "httpd" => :build # to build the apache2 module
