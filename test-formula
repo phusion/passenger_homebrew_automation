@@ -176,7 +176,10 @@ header "Test installing Passenger and Nginx"
 # then `brew install nginx --with-passenger` will try to install the passenger
 # formula from homebrew-core. The only way to prevent this is to copy our
 # modified formula to the official path.
+brew developer on
+brew update
 OFFICIAL_FORMULA_PATH=$(brew formula "$FORMULA_NAME")
+ls -R "$(brew --repository homebrew/core)"
 run cp "$FORMULA" "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e '/^ *revision.*$/d'				 "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|"	 "$OFFICIAL_FORMULA_PATH"
