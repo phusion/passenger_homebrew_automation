@@ -1,10 +1,11 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.0.26/passenger-6.0.26.tar.gz"
-  sha256 "c69312230d4467a30d7a8abd25ee04250df3e332432871c6bd561ef5eea3d485"
+  url "https://github.com/phusion/passenger/releases/download/release-6.1.0/passenger-6.1.0.tar.gz"
+  sha256 "1cf30bbb6d39f19811141a43cb0d67e7bbf6a4bc3fe8b4145eaeb53a6ee21268"
   license "MIT"
-  head "https://github.com/phusion/passenger.git", branch: "stable-6.0"
+  revision 2
+  head "https://github.com/phusion/passenger.git", branch: "stable-6.1"
 
   depends_on "httpd" => :build # to build the apache2 module
   depends_on "nginx" => [:build, :test] # to build nginx module
@@ -16,11 +17,11 @@ class Passenger < Formula
   uses_from_macos "xz" => :build
   uses_from_macos "curl"
   uses_from_macos "libxcrypt"
-  uses_from_macos "ruby", since: :catalina
+  uses_from_macos "ruby"
   uses_from_macos "zlib"
 
   def install
-    if OS.mac? && MacOS.version >= :mojave && MacOS::CLT.installed?
+    if OS.mac? && MacOS::CLT.installed?
       ENV["SDKROOT"] = MacOS::CLT.sdk_path(MacOS.version)
     else
       ENV.delete("SDKROOT")
