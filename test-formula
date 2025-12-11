@@ -179,7 +179,6 @@ header "Test installing Passenger and Nginx"
 brew developer on
 brew update
 OFFICIAL_FORMULA_PATH=$(brew formula "$FORMULA_NAME")
-ls -R "$(brew --repository homebrew/core)"
 run cp "$FORMULA" "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e '/^ *revision.*$/d'				 "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e "s|^  url \".*|  url \"file://$TARBALL\"|"	 "$OFFICIAL_FORMULA_PATH"
