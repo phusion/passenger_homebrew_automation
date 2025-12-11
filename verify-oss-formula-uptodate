@@ -61,9 +61,12 @@ if [[ "$CORE_GIT_REPO_CACHE" = "" ]]; then
 	run git clone --bare https://github.com/Homebrew/homebrew-core.git "$TEMP_DIR/repo"
 	echo "+ Changing directory to: $TEMP_DIR/repo"
 	cd "$TEMP_DIR/repo"
-	echo "+ git log -n 1 --format=%ad master -- Formula/passenger.rb"
-	CORE_DATE=$(git log -n 1 --format=%ad master -- Formula/passenger.rb)
+	echo "+ git log -n 1 --format=%ad main -- Formula/passenger.rb"
+	CORE_DATE=$(git log -n 1 --format=%ad main -- Formula/passenger.rb)
 else
+	if ! brew tap | grep -q homebrew/core; then
+		run brew tap --force homebrew/core
+	fi
 	if [[ -e "$CORE_GIT_REPO_CACHE" ]]; then
 		echo "+ Changing directory to: $CORE_GIT_REPO_CACHE"
 		cd "$CORE_GIT_REPO_CACHE"
@@ -77,8 +80,8 @@ else
 			run git fetch "$CORE_GIT_REMOTE"
 		fi
 	fi
-	echo "+ git log -n 1 --format=%ad $CORE_GIT_REMOTE/master -- Formula/passenger.rb"
-	CORE_DATE=$(git log -n 1 --format="%ad" "$CORE_GIT_REMOTE/master" -- Formula/passenger.rb)
+	echo "+ git log -n 1 --format=%ad $CORE_GIT_REMOTE/main -- Formula/passenger.rb"
+	CORE_DATE=$(git log -n 1 --format="%ad" "$CORE_GIT_REMOTE/main" -- Formula/passenger.rb)
 fi
 CORE_TIMESTAMP=$(ruby -rtime -e 'puts Time.parse(ARGV[0]).to_i' "$CORE_DATE")
 echo "Homebrew-core's timestamp: $CORE_DATE => $CORE_TIMESTAMP"
