@@ -1,14 +1,15 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
+
 require 'optparse'
 require 'digest/sha2'
 
 SELFDIR = File.expand_path(File.dirname(__FILE__))
-REQUIRED_OPTIONS = [:passenger_dir, :tarball, :formula]
+REQUIRED_OPTIONS = [ :passenger_dir, :tarball, :formula ]
 
 # Files and directories that should be excluded from the Homebrew installation.
 HOMEBREW_EXCLUDE = [
-  'INSTALL.md'
+  'INSTALL.md',
 ]
 
 def main
@@ -34,9 +35,9 @@ def main
   formula.gsub!(/^  sha256 .*/, "  sha256 \"#{sha256}\"") ||
     abort('Unable to substitute Homebrew formula SHA-256')
 
-  formula.sub!(/.*depends_on.*apache.*\n/,"")
-  formula.sub!(/.*uses_from_macos "ruby".*\n/,"")
-  formula.sub!(/.*revision.*\n/,"")
+  formula.sub!(/.*depends_on.*apache.*\n/, "")
+  formula.sub!(/.*uses_from_macos "ruby".*\n/, "")
+  formula.sub!(/.*revision.*\n/, "")
 
   orig_tarball_files = list_passenger_tarball_files(options)
   prefix = '    necessary_files = %w['
@@ -59,7 +60,7 @@ def build_option_parser(options)
   OptionParser.new do |opts|
     opts.banner = 'Usage: ./modify-formula OPTIONS...'
     opts.separator 'Modifies the Homebrew formula for the given Passenger' \
-    	' installation and tarball: tarball filename, SHA256 and more.'
+      ' installation and tarball: tarball filename, SHA256 and more.'
 
     opts.separator ''
     opts.separator 'Required options:'
@@ -150,9 +151,9 @@ def split_line(line, width)
   end
 
   if last_at == nil
-    [line]
+    [ line ]
   else
-    [line[0,last_at], line[last_at+1, line.length]]
+    [ line[0, last_at], line[last_at+1, line.length] ]
   end
 end
 
