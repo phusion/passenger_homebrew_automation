@@ -1,10 +1,9 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.1.0/passenger-6.1.0.tar.gz"
-  sha256 "1cf30bbb6d39f19811141a43cb0d67e7bbf6a4bc3fe8b4145eaeb53a6ee21268"
+  url "https://github.com/phusion/passenger/releases/download/release-6.1.4/passenger-6.1.4.tar.gz"
+  sha256 "e5023c12734895cfb7bd56ed3f5385de97c42176c53c12caa295e3c3d6fa9e23"
   license "MIT"
-  revision 2
   head "https://github.com/phusion/passenger.git", branch: "stable-6.1"
 
   depends_on "httpd" => :build # to build the apache2 module
@@ -18,7 +17,10 @@ class Passenger < Formula
   uses_from_macos "curl"
   uses_from_macos "libxcrypt"
   uses_from_macos "ruby"
-  uses_from_macos "zlib"
+
+  on_linux do
+    depends_on "zlib-ng-compat"
+  end
 
   def install
     if OS.mac? && MacOS::CLT.installed?
@@ -61,7 +63,7 @@ class Passenger < Formula
     cp_r necessary_files, libexec, preserve: true
 
     # Allow Homebrew to create symlinks for the Phusion Passenger commands.
-    bin.install_symlink Dir["#{libexec}/bin/*"]
+    bin.install_symlink libexec.glob("bin/*")
 
     # Ensure that the Phusion Passenger commands can always find their library
     # files.
