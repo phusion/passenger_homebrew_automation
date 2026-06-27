@@ -1,9 +1,10 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.1.4/passenger-6.1.4.tar.gz"
-  sha256 "e5023c12734895cfb7bd56ed3f5385de97c42176c53c12caa295e3c3d6fa9e23"
+  url "https://github.com/phusion/passenger/releases/download/release-6.1.5/passenger-6.1.5.tar.gz"
+  sha256 "f5e7ba5f811dcc7dcf9d06c29a580db6f991f51275debf233b6302d283d28cab"
   license "MIT"
+  revision 1
   head "https://github.com/phusion/passenger.git", branch: "stable-6.1"
 
   depends_on "httpd" => :build # to build the apache2 module
@@ -117,7 +118,7 @@ class Passenger < Formula
     ruby_libdir = `#{HOMEBREW_PREFIX}/bin/passenger-config --ruby-libdir`.strip
     assert_equal "#{libexec}/src/ruby_supportlib", ruby_libdir
 
-    (testpath/"nginx.conf").write <<~EOS
+    (testpath/"nginx.conf").write <<~CONF
       load_module #{opt_libexec}/modules/ngx_http_passenger_module.so;
       worker_processes 4;
       error_log #{testpath}/error.log;
@@ -145,7 +146,7 @@ class Passenger < Formula
           error_log #{testpath}/error.log;
         }
       }
-    EOS
+    CONF
     system "#{Formula["nginx"].opt_bin}/nginx", "-t", "-c", testpath/"nginx.conf"
   end
 end
