@@ -138,6 +138,7 @@ if $RESET_HOMEBREW; then
 		else
 			run brew tap phusion/passenger-enterprise
 		fi
+		brew trust --tap phusion/passenger-enterprise
 	fi
 fi
 
