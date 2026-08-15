@@ -7,7 +7,7 @@ class Passenger < Formula
   head "https://github.com/phusion/passenger.git", branch: "stable-6.1"
 
   depends_on "httpd" => :build # to build the apache2 module
-  depends_on "nginx" => [:build, :test] # to build nginx module
+  depends_on "nginx" => [ :build, :test ] # to build nginx module
   depends_on "apr"
   depends_on "apr-util"
   depends_on "openssl@3"
