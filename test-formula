@@ -125,11 +125,6 @@ unset USE_CCACHE
 echo "+ Grabbing lock file: /tmp/test-homebrew-formula.lock"
 ruby -e 'File.open("/tmp/test-formula.lock", "w").flock(File::LOCK_EX); sleep' &
 
-echo '=== before reset ==='
-lsof "$(brew --prefix)/var/homebrew/locks/update" 2>/dev/null || true
-ps aux | grep '[g]it fsmonitor' || true
-
-
 if $RESET_HOMEBREW; then
 	echo
 	header "Resetting Homebrew repositories"
@@ -146,11 +141,6 @@ if $RESET_HOMEBREW; then
 		brew trust --tap phusion/passenger-enterprise
 	fi
 fi
-
-echo '=== before uninstall ==='
-lsof "$(brew --prefix)/var/homebrew/locks/update" 2>/dev/null || true
-ps aux | grep '[g]it fsmonitor' || true
-
 
 if ! $NO_UNINSTALL; then
 	echo
@@ -187,24 +177,8 @@ header "Test installing Passenger and Nginx"
 # then `brew install nginx --with-passenger` will try to install the passenger
 # formula from homebrew-core. The only way to prevent this is to copy our
 # modified formula to the official path.
-
-echo '=== before developer ==='
-lsof "$(brew --prefix)/var/homebrew/locks/update" 2>/dev/null || true
-ps aux | grep '[g]it fsmonitor' || true
-
-run brew developer on
-
-# homebrew frequently doesn't work well: gh:actions/runner-images #13856 #13965 #13985
-echo '=== before update ==='
-lsof "$(brew --prefix)/var/homebrew/locks/update" 2>/dev/null || true
-ps aux | grep '[g]it fsmonitor' || true
-
-run brew update
-
-echo '=== after update ==='
-lsof "$(brew --prefix)/var/homebrew/locks/update" 2>/dev/null || true
-ps aux | grep '[g]it fsmonitor' || true
-
+brew developer on
+brew update
 OFFICIAL_FORMULA_PATH=$(brew formula "$FORMULA_NAME")
 run cp "$FORMULA" "$OFFICIAL_FORMULA_PATH"
 run sed -i '' -e '/^ *revision.*$/d'				 "$OFFICIAL_FORMULA_PATH"
