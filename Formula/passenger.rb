@@ -1,16 +1,17 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.1.7/passenger-6.1.7.tar.gz"
-  sha256 "90a75cc73cf73eef52e8f96564f2beecd9d42d745669c76b9009f1abc8bca0b6"
+  url "https://github.com/phusion/passenger/releases/download/release-6.2.0/passenger-6.2.0.tar.gz"
+  sha256 "bd0e14538fa4a9f479a3ce60805a201bf10757d6051d23087759b1abbc811529"
   license "MIT"
-  head "https://github.com/phusion/passenger.git", branch: "stable-6.1"
+  revision 4
+  head "https://github.com/phusion/passenger.git", branch: "stable-6.2"
 
   depends_on "httpd" => :build # to build the apache2 module
   depends_on "nginx" => [:build, :test] # to build nginx module
   depends_on "apr"
   depends_on "apr-util"
-  depends_on "openssl@3"
+  depends_on "openssl@4"
   depends_on "pcre2"
 
   uses_from_macos "xz" => :build
@@ -30,8 +31,8 @@ class Passenger < Formula
     end
 
     inreplace "src/ruby_supportlib/phusion_passenger/platform_info/openssl.rb" do |s|
-      s.gsub! "-I/usr/local/opt/openssl/include", "-I#{formula_opt_include("openssl@3")}"
-      s.gsub! "-L/usr/local/opt/openssl/lib", "-L#{formula_opt_lib("openssl@3")}"
+      s.gsub! "-I/usr/local/opt/openssl/include", "-I#{formula_opt_include("openssl@4")}"
+      s.gsub! "-L/usr/local/opt/openssl/lib", "-L#{formula_opt_lib("openssl@4")}"
     end
 
     system "rake", "apache2"
@@ -149,3 +150,4 @@ class Passenger < Formula
     system "#{formula_opt_bin("nginx")}/nginx", "-t", "-c", testpath/"nginx.conf"
   end
 end
+
