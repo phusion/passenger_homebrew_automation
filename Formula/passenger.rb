@@ -150,4 +150,3 @@ class Passenger < Formula
     system "#{formula_opt_bin("nginx")}/nginx", "-t", "-c", testpath/"nginx.conf"
   end
 end
-
