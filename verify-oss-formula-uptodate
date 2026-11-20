@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 SELFDIR=$(dirname "$0")
 SELFDIR=$(cd "$SELFDIR" && pwd)
@@ -46,6 +46,18 @@ function parse_options()
 	shift $OPTIND || true
 }
 
+# Prints a formula with the parts that are expected to differ between our copy and
+# homebrew-core removed: the release tarball URL and checksum, the revision, and the
+# bottle block. Homebrew's bots update those for every release and dependency bump,
+# so whatever remains is the formula logic that must be kept in sync.
+function normalize_formula()
+{
+	sed -E \
+		-e '/^  bottle do$/,/^  end$/d' \
+		-e '/^  (url|sha256|revision) /d' |
+		cat -s
+}
+
 parse_options "$@"
 
 if [[ "$CORE_GIT_REPO_CACHE" = "" ]]; then
@@ -61,8 +73,9 @@ if [[ "$CORE_GIT_REPO_CACHE" = "" ]]; then
 	run git clone --bare https://github.com/Homebrew/homebrew-core.git "$TEMP_DIR/repo"
 	echo "+ Changing directory to: $TEMP_DIR/repo"
 	cd "$TEMP_DIR/repo"
-	echo "+ git log -n 1 --format=%ad main -- Formula/passenger.rb"
-	CORE_DATE=$(git log -n 1 --format=%ad main -- Formula/passenger.rb)
+	CORE_REF=main
+	echo "+ git log -n 1 --format=%ad main -- Formula/p/passenger.rb"
+	CORE_DATE=$(git log -n 1 --format=%ad main -- Formula/p/passenger.rb)
 else
 	if ! brew tap | grep -q homebrew/core; then
 		run brew tap --force homebrew/core
@@ -80,11 +93,13 @@ else
 			run git fetch "$CORE_GIT_REMOTE"
 		fi
 	fi
-	echo "+ git log -n 1 --format=%ad $CORE_GIT_REMOTE/main -- Formula/passenger.rb"
-	CORE_DATE=$(git log -n 1 --format="%ad" "$CORE_GIT_REMOTE/main" -- Formula/passenger.rb)
+	CORE_REF="$CORE_GIT_REMOTE/main"
+	echo "+ git log -n 1 --format=%ad $CORE_GIT_REMOTE/main -- Formula/p/passenger.rb"
+	CORE_DATE=$(git log -n 1 --format="%ad" "$CORE_GIT_REMOTE/main" -- Formula/p/passenger.rb)
 fi
 CORE_TIMESTAMP=$(ruby -rtime -e 'puts Time.parse(ARGV[0]).to_i' "$CORE_DATE")
 echo "Homebrew-core's timestamp: $CORE_DATE => $CORE_TIMESTAMP"
+CORE_CONTENT=$(git show "$CORE_REF:Formula/p/passenger.rb" | normalize_formula)
 
 echo
 echo "+ Changing directory: $SELFDIR"
@@ -93,11 +108,18 @@ echo "+ Running: git log -n 1 --format=%ad -- Formula/passenger.rb"
 OUR_DATE=$(git log -n 1 --format=%ad -- Formula/passenger.rb)
 OUR_TIMESTAMP=$(ruby -rtime -e 'puts Time.parse(ARGV[0]).to_i' "$OUR_DATE")
 echo "Our timestamp: $OUR_DATE => $OUR_TIMESTAMP"
+OUR_CONTENT=$(normalize_formula < Formula/passenger.rb)
 
+# Our copy is up-to-date if its formula logic matches homebrew-core's. If it doesn't
+# match, our copy may hold changes for unreleased Passenger versions, which is fine
+# as long as we changed it more recently than homebrew-core did.
 echo
-if [[ "$OUR_TIMESTAMP" -ge "$CORE_TIMESTAMP" ]] && [[ "$OUR_CONTENT" = "$CORE_CONTENT" ]]; then
-	echo "Our formula is sufficiently up-to-date compared to the one in the Homebrew official core tap."
+if [[ "$OUR_CONTENT" = "$CORE_CONTENT" ]]; then
+	echo "Our formula matches the one in the Homebrew official core tap (ignoring url, sha256, revision and bottle)."
+elif [[ "$OUR_TIMESTAMP" -ge "$CORE_TIMESTAMP" ]]; then
+	echo "Our formula differs from the one in the Homebrew official core tap, but ours was changed more recently."
 else
-	echo "ERROR: our formula is outdated. There is a newer one in the Homebrew official core tap. Please merge over the changes."
+	echo "ERROR: our formula is outdated. The one in the Homebrew official core tap has newer changes. Please merge them over:"
+	diff -u --label ours <(echo "$OUR_CONTENT") --label homebrew-core <(echo "$CORE_CONTENT") || [[ $? -eq 1 ]]
 	exit 1
 fi
