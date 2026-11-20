@@ -1,11 +1,19 @@
 class Passenger < Formula
   desc "Server for Ruby, Python, and Node.js apps via Apache/NGINX"
   homepage "https://www.phusionpassenger.com/"
-  url "https://github.com/phusion/passenger/releases/download/release-6.2.0/passenger-6.2.0.tar.gz"
-  sha256 "bd0e14538fa4a9f479a3ce60805a201bf10757d6051d23087759b1abbc811529"
+  url "https://github.com/phusion/passenger/releases/download/release-6.2.2/passenger-6.2.2.tar.gz"
+  sha256 "753e74b89ffc7e0e9525b00c936d71da28f279f849e94781be72e7c19c617994"
   license "MIT"
-  revision 4
+  revision 1
   head "https://github.com/phusion/passenger.git", branch: "stable-6.2"
+
+  bottle do
+    sha256 cellar: :any, arm64_golden_gate: "bd7532dc2fa898836dbfeb677f1168e8f4e9597cb7eeb747d4d60116fa098d80"
+    sha256 cellar: :any, arm64_tahoe:       "9ef12cdddf8c9078b0ead1359b36394d4b0df059cba82bacdf6cf3bb41ca088e"
+    sha256 cellar: :any, arm64_sequoia:     "f9f6e763eb380ca11d9e4461b3291d813c7afbd9dc48da9bf1bcf045e98eb4e1"
+    sha256 cellar: :any, arm64_linux:       "f332cb6bc4a4bbf97aa3d84a611beeeb3202308cfba83f1ebc12bfd7bb20de5f"
+    sha256 cellar: :any, x86_64_linux:      "c13bdfdf92dae4e2fe64183d960efc56c4a2dd2c5b35e7b36fa659aea0ee9c40"
+  end
 
   depends_on "httpd" => :build # to build the apache2 module
   depends_on "nginx" => [:build, :test] # to build nginx module
@@ -23,6 +31,10 @@ class Passenger < Formula
     depends_on "zlib-ng-compat"
   end
 
+  allow_network_access! :test
+
+  def openssl = deps.map(&:name).find { |d| d.match?(/^openssl(@\d+(\.\d+)*)?$/) }
+
   def install
     if OS.mac? && MacOS::CLT.installed?
       ENV["SDKROOT"] = MacOS::CLT.sdk_path(MacOS.version)
@@ -31,17 +43,18 @@ class Passenger < Formula
     end
 
     inreplace "src/ruby_supportlib/phusion_passenger/platform_info/openssl.rb" do |s|
-      s.gsub! "-I/usr/local/opt/openssl/include", "-I#{formula_opt_include("openssl@4")}"
-      s.gsub! "-L/usr/local/opt/openssl/lib", "-L#{formula_opt_lib("openssl@4")}"
+      s.gsub! "-I/usr/local/opt/openssl/include", "-I#{formula_opt_include(openssl)}"
+      s.gsub! "-L/usr/local/opt/openssl/lib", "-L#{formula_opt_lib(openssl)}"
     end
 
     system "rake", "apache2"
     system "rake", "nginx"
     nginx_addon_dir = `./bin/passenger-config about nginx-addon-dir`.strip
+    nginx = Formula["nginx"]
 
     mkdir "nginx" do
-      system "tar", "-xf", "#{Formula["nginx"].opt_pkgshare}/src/src.tar.xz", "--strip-components", "1"
-      args = (Formula["nginx"].opt_pkgshare/"src/configure_args.txt").read.split("\n")
+      system "tar", "-xf", "#{nginx.opt_pkgshare}/src/src.tar.xz", "--strip-components", "1"
+      args = (nginx.opt_pkgshare/"src/configure_args.txt").read.split("\n")
       args << "--add-dynamic-module=#{nginx_addon_dir}"
 
       system "./configure", *args
@@ -79,14 +92,14 @@ class Passenger < Formula
       "--ruby", ruby_libdir, *Dir[libexec/"bin/*"]
 
     # Recreate the tarball with a top-level directory, and use Gzip compression.
-    mkdir "nginx-#{Formula["nginx"].version}" do
-      system "tar", "-xf", "#{Formula["nginx"].opt_pkgshare}/src/src.tar.xz", "--strip-components", "1"
+    mkdir "nginx-#{nginx.version}" do
+      system "tar", "-xf", "#{nginx.opt_pkgshare}/src/src.tar.xz", "--strip-components", "1"
     end
     system "tar", "-czf", buildpath/"nginx.tar.gz", "nginx-#{Formula["nginx"].version}"
 
     system "./bin/passenger-config", "compile-nginx-engine",
       "--nginx-tarball", buildpath/"nginx.tar.gz",
-      "--nginx-version", Formula["nginx"].version.to_s
+      "--nginx-version", nginx.version.to_s
     cp Dir["buildout/support-binaries/nginx*"], libexec/"buildout/support-binaries", preserve: true
 
     nginx_addon_dir.gsub!(/^#{Regexp.escape Dir.pwd}/, libexec)
@@ -150,3 +163,4 @@ class Passenger < Formula
     system "#{formula_opt_bin("nginx")}/nginx", "-t", "-c", testpath/"nginx.conf"
   end
 end
+
